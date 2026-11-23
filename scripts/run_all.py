@@ -22,6 +22,17 @@ from freenerf_ns import plan  # noqa: E402
 from run_arm import execute  # noqa: E402
 
 
+def stage_outputs(run_id: str, lead: bool, dry: bool) -> None:
+    """After every finished run: a preview image of it, and (one shard only) PROGRESS.md + a main-table snapshot,
+    so a job that runs out of GPU time still leaves results to show. Never fatal."""
+    if dry or not (Path("results/runs") / f"{run_id}.json").exists():
+        return
+    import subprocess
+    for what in (["preview", "--run-id", run_id], ["progress"] if lead else None):
+        if what:
+            subprocess.run([sys.executable, "scripts/stage_outputs.py", *what], check=False)
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--only", default=None, help="comma-separated experiment ids")
@@ -68,6 +79,7 @@ def main(argv=None):
         try:
             execute(r.scene, r.arm, r.n, r.seed, a.iters, frozen=frozen, orbit=orbit, dry_run=a.dry_run,
                     lpips=not a.no_lpips, device=a.device, rays=a.rays, amp=a.amp)
+            stage_outputs(r.run_id, lead=(not a.shard or a.shard.startswith("0/")), dry=a.dry_run)
         except Exception:
             traceback.print_exc()
             failed.append(r.run_id)
