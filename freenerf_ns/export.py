@@ -20,6 +20,23 @@ import numpy as np
 from .geometry import orbit_poses
 
 
+def trust_own_checkpoints() -> None:
+    """torch>=2.6 defaults torch.load(weights_only=True), which rejects the numpy scalars nerfstudio stores in its
+    checkpoints. The checkpoints loaded here are the ones this pipeline just wrote, so full unpickling is safe."""
+    import torch
+
+    if getattr(torch.load, "_freenerf_patched", False):
+        return
+    orig = torch.load
+
+    def load(*args, **kwargs):
+        kwargs.setdefault("weights_only", False)
+        return orig(*args, **kwargs)
+
+    load._freenerf_patched = True
+    torch.load = load
+
+
 def cameras_from_transforms(tj: Path, indices, width: int, height: int):
     import torch
     from nerfstudio.cameras.cameras import Cameras, CameraType
@@ -108,6 +125,7 @@ def main(argv=None):
 
     from nerfstudio.utils.eval_utils import eval_setup
 
+    trust_own_checkpoints()
     t0 = time.time()
     config, pipeline, ckpt, step = eval_setup(Path(a.config), test_mode="inference")
     model, device = pipeline.model.eval(), pipeline.device
