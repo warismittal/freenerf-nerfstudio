@@ -73,11 +73,11 @@ def submission_runs() -> List[Run]:
     runs: List[Run] = []
     runs += [Run("S-main", s, a, 8, 0) for s in S for a in ("A", "D")]                           # P1 main table, seed 0
     runs += [Run("S-main", s, "A", "dense", 0) for s in S]                                       # P1 rho denominator, C4
+    runs += [Run("S-real", REAL, a, 8, 0) for a in ("A", "D")] + [Run("S-real", REAL, "A", "dense", 0)]  # P1 real scene
     runs += [Run("S-ablation", s, a, 8, 0) for s in S for a in ("B", "C")]                       # P2 2x2 factorial, 1 seed
     runs += [Run("S-main", s, a, 8, sd) for sd in (1, 2) for s in S for a in ("A", "D")]         # P3 seeds 1-2
     runs += [Run("S-ext", "lego", a, n, 0) for n in (4, 16) for a in ("A", "D")]                 # P4 view sweep for N_eq
     runs += [Run("S-gate2", "drums", a, 8, 0) for a in ("A", "D")]                               # P5 dev-scene check
     runs += [Run("S-ext", s, "Aprime", 8, 0) for s in S]                                         # P5 untuned baseline
     runs += [Run("S-opt", "lego", "E", 8, 0)]                                                     # P5 comparator
-    runs += [Run("S-real", REAL, a, 8, 0) for a in ("A", "D")] + [Run("S-real", REAL, "A", "dense", 0)]
     return runs
