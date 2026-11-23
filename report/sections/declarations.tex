@@ -1,0 +1,8 @@
+\section{Limitations}
+\textbf{Compute.} Every arm was trained for \Iters{} iterations, chosen by the budget rule on a free Kaggle T4 (\SPerIter\,s per iteration, \AmpText). The FreeNeRF paper trains far longer on a different base (mip-NeRF in JAX); absolute PSNR values are therefore lower than published ones and our 100-view reference is not converged. $\rho$ is defined against a reference trained with the same budget, which makes it a fair within-study ratio but not a comparison with published dense-view numbers.
+\textbf{Statistics.} The main comparison uses 3 seeds and 25 test views per scene; the ablation and the view sweep use one seed, so their differences are reported without seed intervals and should be read as indicative.
+\textbf{Scope.} Two synthetic objects with white backgrounds; one regulariser and one comparator; default hyper-parameters from the paper, not tuned for nerfstudio.
+
+\section{Contribution statement and AI declaration}
+\textbf{Contributions.} \emph{Waris (1024170155):} implementation of the nerfstudio method (frequency mask, occlusion loss, depth-smoothness comparator), evaluation module, Kaggle experiments, analysis, report and slides. \emph{Tanishq (1024170156):} \TanishqContribution.
+\textbf{AI declaration.} We used Claude (Anthropic) as a coding and writing assistant: it drafted most of the code and tests in the repository, wrote the Kaggle job scripts and launched and monitored the Kaggle runs on our account, and drafted this report and the slides from the logged results. All design decisions were reviewed by us; every number in this report is produced by \texttt{run\_all.sh} from the run logs committed to the public repository, and no number was typed by hand.

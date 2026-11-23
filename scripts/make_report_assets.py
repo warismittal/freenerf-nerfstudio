@@ -134,6 +134,15 @@ def build(results: Path, out: Path) -> dict:
             macros.append(f"\\newcommand{{\\{macro_name(s, 'rho')}}}{{{f(gg.rho_psnr)}}}")
             macros.append(f"\\newcommand{{\\{macro_name(s, 'gap')}}}{{{f(gg.gap_dB)}}}")
             macros.append(f"\\newcommand{{\\{macro_name(s, 'dpsnr')}}}{{{f(gg.dpsnr_vs_A)}}}")
+    it = results / "iters.json"
+    if it.exists():
+        d = json.loads(it.read_text())
+        nums["iters"] = d
+        macros.append(f"\\newcommand{{\\Iters}}{{{int(d['iters']):,}}}".replace(",", "{,}"))
+        macros.append(f"\\newcommand{{\\SPerIter}}{{{d['s_per_iter']:.3f}}}")
+        macros.append(f"\\newcommand{{\\AmpText}}{{{'mixed precision (fp16 autocast)' if d.get('amp') else 'fp32'}}}")
+    n_runs = len(summary.index)
+    macros.append(f"\\newcommand{{\\NumCells}}{{{n_runs}}}")
     (out / "numbers.tex").write_text("\n".join(macros) + "\n")
     (out / "numbers.json").write_text(json.dumps(nums, indent=2, default=float))
     return nums

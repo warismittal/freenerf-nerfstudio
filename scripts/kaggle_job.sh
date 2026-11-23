@@ -5,7 +5,8 @@
 #   bash scripts/kaggle_job.sh pilot ITERS                one timed 8-view vanilla Lego run (tau)
 #   bash scripts/kaggle_job.sh runs ITERS ONLY [SCENE]    a slice of the submission plan, e.g. runs 30000 S-main lego
 #        ITERS=auto measures s/iter and applies the budget rule (env BUDGET_GPU_H, AMP=1, RAYS, DEADLINE hours,
-#        PREV=/kaggle/input/<earlier output> to skip runs that an earlier job already finished)
+#        PREV=/kaggle/input/<earlier output> to skip runs that an earlier job already finished,
+#        CAPTURE=/kaggle/input/<photos> to pose the self-captured scene with COLMAP first)
 set -uo pipefail
 cd "$(dirname "$0")/.."
 OUT=${KAGGLE_OUT:-/kaggle/working/out}
@@ -36,6 +37,15 @@ media() {  # novel-view videos (R-videos) and qualitative grids (R5) from whatev
   done
 }
 
+real_setup() {  # CAPTURE=/kaggle/input/<photos>: COLMAP poses -> Blender layout + manifests for the 'real' scene
+  [ -n "${CAPTURE:-}" ] || return 0
+  [ -f data/blender400/real/transforms_train.json ] && return 0
+  python -c "import pycolmap" 2>/dev/null || pip install -q pycolmap || { apt-get update -qq && apt-get install -y -qq colmap; }
+  python scripts/colmap_scene.py --src "$CAPTURE" --out data/real/capture 2>&1 | tail -5
+  python scripts/real_scene.py --ns-dir data/real/capture --out-root data/blender400 --manifests manifests
+  mkdir -p results && cp data/real/capture/colmap_report.json results/real_colmap_report.json
+}
+
 import_prev() {  # PREV=/kaggle/input/<earlier version output>: reuse finished runs so they are skipped, not retrained
   [ -n "${PREV:-}" ] || return 0
   src=$(find "$PREV" -maxdepth 4 -type d -name runs -path "*results/runs" | head -1)
@@ -60,6 +70,7 @@ case "$stage" in
   pilot) setup && ( time python scripts/run_arm.py --scene lego --arm A --n 8 --seed 0 --iters "${2:-30000}" --device cuda ) \
            2>&1 | tee "$OUT/pilot.log"; save ;;
   runs)  setup
+         real_setup
          import_prev
          NG=$(python -c "import torch; print(max(torch.cuda.device_count(), 1))")
          ITERS=${2:-30000}
