@@ -14,6 +14,7 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+import os
 import shutil
 from pathlib import Path
 
@@ -124,6 +125,10 @@ def make_sparse(data_root, manifest_dir, scene: str, n, out_root, permute_seed=N
     tj = root / "transforms_train.json"
     meta = _load(tj)
     dest = Path(out_root) / (f"{scene}_n{n}" + ("_perm" if permute_seed is not None else ""))
+    if dest.exists() and permute_seed is None and not controls.check_sparse_dir(dest, man):
+        return dest                                   # already built and valid: reuse (safe when two GPUs share it)
+    final = dest
+    dest = Path(out_root) / f".{final.name}.tmp{os.getpid()}"   # build privately, then rename into place
     if dest.exists():
         shutil.rmtree(dest)
     (dest / "train").mkdir(parents=True)
@@ -149,7 +154,14 @@ def make_sparse(data_root, manifest_dir, scene: str, n, out_root, permute_seed=N
     bad = controls.check_sparse_dir(dest, man)
     if bad:
         raise RuntimeError(f"sparse dataset isolation check failed: {bad}")
-    return dest
+    if final.exists():
+        if permute_seed is not None:
+            shutil.rmtree(final)
+        else:                                         # another process won the race; its copy is identical
+            shutil.rmtree(dest)
+            return final
+    os.rename(dest, final)
+    return final
 
 
 # ------------------------------------------------------------------------------------------------ real scene

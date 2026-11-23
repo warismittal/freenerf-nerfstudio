@@ -1,4 +1,5 @@
 import json
+import zlib
 import math
 import tempfile
 from pathlib import Path
@@ -11,8 +12,9 @@ V = 25
 
 
 def make_run(scene, arm, n, seed, psnr, lpips=0.3, diag=None, time_s=1000.0, ang=None):
-    rng = np.random.default_rng(hash((scene, arm, n, seed)) % 2**32)
-    p = psnr + rng.normal(0, 0.3, V)
+    rng = np.random.default_rng(zlib.crc32(f"{scene}{arm}{n}{seed}".encode()))   # deterministic across processes
+    e = rng.normal(0, 0.3, V)
+    p = psnr + (e - e.mean())                                                  # per-run mean is exactly `psnr`
     d = {"G": 10.0, "omega_M": 0.3, "B": 0.05, "R_hi": 0.8}
     d.update(diag or {})
     return {"run_id": f"{scene}_{arm}_n{n}_s{seed}", "scene": scene, "arm": arm, "n": n, "seed": seed, "iters": 1000,

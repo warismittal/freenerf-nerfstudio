@@ -134,3 +134,10 @@ def test_lite_profile_produces_laptop_sized_commands():
     full = " ".join(__import__("freenerf_ns.arms", fromlist=["x"]).train_command(
         __import__("freenerf_ns.arms", fromlist=["x"]).arm_spec("D"), data_dir="d", out_dir="o", run_id="r", iters=1, seed=0))
     assert "device-type" not in full and "train-num-rays-per-batch" not in full          # full profile unchanged
+
+
+def test_shards_partition_the_plan():
+    a = run(["scripts/run_all.py", "--plan", "submission", "--list", "--shard", "0/2"]).stdout
+    b = run(["scripts/run_all.py", "--plan", "submission", "--list", "--shard", "1/2"]).stdout
+    ids = lambda out: {l.split()[1] for l in out.splitlines() if l.startswith("S-")}
+    assert ids(a) and ids(b) and not ids(a) & ids(b) and len(ids(a) | ids(b)) == 30

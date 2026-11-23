@@ -36,7 +36,16 @@ case "$stage" in
   smoke) setup && bash scripts/smoke_test.sh 2>&1 | tee "$OUT/smoke.log" ;;
   pilot) setup && ( time python scripts/run_arm.py --scene lego --arm A --n 8 --seed 0 --iters "${2:-30000}" --device cuda ) \
            2>&1 | tee "$OUT/pilot.log"; save ;;
-  runs)  setup && python scripts/run_all.py --plan submission --iters "${2:-30000}" --only "${3:?experiment ids}" \
-           ${4:+--scene "$4"} --device cuda 2>&1 | tee -a "$OUT/runs.log"; save ;;
+  runs)  setup
+         NG=$(python -c "import torch; print(max(torch.cuda.device_count(), 1))")
+         echo "running on $NG GPU(s) in parallel"
+         for k in $(seq 0 $((NG-1))); do
+           CUDA_VISIBLE_DEVICES=$k python scripts/run_all.py --plan submission --iters "${2:-30000}" --only "${3:?experiment ids}" \
+             ${4:+--scene "$4"} --device cuda --shard "$k/$NG" > "$OUT/runs_gpu$k.log" 2>&1 &
+         done
+         wait
+         tail -n 15 "$OUT"/runs_gpu*.log
+         python -m evalkit.aggregate --results results --manifests manifests 2>&1 | tail -12 || true
+         save ;;
   *) echo "unknown stage $stage"; exit 2 ;;
 esac

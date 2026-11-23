@@ -114,3 +114,13 @@ def test_real_scene_conversion():
         assert controls.verify_hashes(man) == []
         sparse = datasets.make_sparse(out, man, "real", 8, Path(t) / "sparse")
         assert len(list((sparse / "train").glob("*.png"))) == 8
+
+
+def test_make_sparse_reuses_a_valid_folder_and_leaves_no_temp_dirs():
+    with tempfile.TemporaryDirectory() as t:
+        _, small, man, sparse = _setup(t)
+        a = datasets.make_sparse(small, man, "lego", 8, sparse)
+        stamp = (a / "train" / "r_26.png").stat().st_mtime_ns
+        b = datasets.make_sparse(small, man, "lego", 8, sparse)
+        assert a == b and (b / "train" / "r_26.png").stat().st_mtime_ns == stamp
+        assert not [p for p in sparse.iterdir() if p.name.startswith(".")]

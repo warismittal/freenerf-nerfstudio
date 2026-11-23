@@ -31,6 +31,7 @@ def main(argv=None):
     ap.add_argument("--plan", default="core", choices=["core", "submission"],
                     help="core = full proposal matrix; submission = the reduced matrix actually run (see README)")
     ap.add_argument("--list", action="store_true")
+    ap.add_argument("--shard", default=None, help="k/n: run every n-th run starting at k (one shard per GPU)")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--no-lpips", action="store_true")
@@ -38,6 +39,9 @@ def main(argv=None):
 
     base = plan.submission_runs() if a.plan == "submission" else plan.core_runs(a.extensions)
     runs = plan.select(base, a.only, a.scene)
+    if a.shard:
+        k, n = (int(x) for x in a.shard.split("/"))
+        runs = runs[k::n]
     if a.list:
         for r in runs:
             print(f"{r.exp:4s} {r.run_id:28s} cost {r.cost:.2f} SRE")
