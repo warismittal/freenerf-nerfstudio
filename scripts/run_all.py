@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 import traceback
 from pathlib import Path
 
@@ -35,6 +36,10 @@ def main(argv=None):
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--device", default="cpu")
     ap.add_argument("--no-lpips", action="store_true")
+    ap.add_argument("--deadline-hours", type=float, default=0,
+                    help="stop starting new runs once elapsed + mean run time would exceed this (Kaggle 12 h limit)")
+    ap.add_argument("--rays", type=int, default=4096, help="rays per training batch (same for every arm)")
+    ap.add_argument("--amp", action="store_true", help="mixed-precision training for every arm")
     a = ap.parse_args(argv)
 
     base = plan.submission_runs() if a.plan == "submission" else plan.core_runs(a.extensions)
@@ -48,17 +53,25 @@ def main(argv=None):
         print(f"\n{len(runs)} runs, {plan.total_cost(runs):.1f} standard-run equivalents (SRE).  GPU-hours ~= SRE x tau(I).")
         return 0
     frozen = json.loads(Path(a.frozen).read_text()) if Path(a.frozen).exists() else None
-    failed = []
+    failed, skipped, durations, t_start = [], [], [], time.time()
     for r in runs:
+        if a.deadline_hours and not a.dry_run:
+            est = (sum(durations) / len(durations)) if durations else 0.0
+            if (time.time() - t_start + est) / 3600 > a.deadline_hours:
+                skipped.append(r.run_id)
+                continue
+        t_run = time.time()
         orbit = 60 if (r.exp in ("E2a", "E2b", "S-main", "S-opt") and r.arm in ("A", "D", "E") and r.n == 8
                        and r.seed == 0 and r.scene != "real") else 0
         try:
             execute(r.scene, r.arm, r.n, r.seed, a.iters, frozen=frozen, orbit=orbit, dry_run=a.dry_run,
-                    lpips=not a.no_lpips, device=a.device)
+                    lpips=not a.no_lpips, device=a.device, rays=a.rays, amp=a.amp)
         except Exception:
             traceback.print_exc()
             failed.append(r.run_id)
-    print(f"\ndone: {len(runs) - len(failed)}/{len(runs)} ok" + (f"; failed: {failed}" if failed else ""))
+        durations.append(time.time() - t_run)
+    print(f"\ndone: {len(runs) - len(failed) - len(skipped)}/{len(runs)} ok" + (f"; failed: {failed}" if failed else "")
+          + (f"; not started (deadline): {skipped}" if skipped else ""))
     return 1 if failed else 0
 
 

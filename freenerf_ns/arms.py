@@ -78,7 +78,7 @@ def flag(name: str) -> str:
 
 def train_command(spec: ArmSpec, *, data_dir: str, out_dir: str, run_id: str, iters: int, seed: int,
                   scene_kind: str = "synthetic", rays: int = 4096, device_type: Optional[str] = None,
-                  eval_chunk: Optional[int] = None) -> List[str]:
+                  eval_chunk: Optional[int] = None, amp: bool = False) -> List[str]:
     cmd = ["ns-train", spec.method, "--data", data_dir, "--output-dir", out_dir, "--experiment-name", run_id,
            "--timestamp", "main", "--max-num-iterations", str(iters), "--machine.seed", str(seed), "--vis", "tensorboard"]
     if spec.method == "freenerf":
@@ -93,6 +93,8 @@ def train_command(spec: ArmSpec, *, data_dir: str, out_dir: str, run_id: str, it
         cmd += ["--pipeline.datamanager.train-num-rays-per-batch", str(rays)]
     if device_type:                       # 'mps' on Apple Silicon, 'cpu' on Intel Macs
         cmd += ["--machine.device-type", device_type]
+    if amp:                               # fp16 autocast + grad scaling (nerfstudio trainer); ~2x on T4 tensor cores
+        cmd += ["--mixed-precision", "True"]
     if eval_chunk:                        # rays rendered at once when exporting images (memory!)
         cmd += ["--pipeline.model.eval-num-rays-per-chunk", str(eval_chunk)]
     cmd.append("blender-data")

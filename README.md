@@ -83,7 +83,7 @@ for every number reported. All reported numbers are produced by the code in this
 run_all.sh          one command: reproduce the main table        scripts/kaggle_job.sh  non-interactive GPU session entry point
 freenerf_ns/        method (mask, losses, model, encoding, config, export) + datasets, arms, experiment plans
 evalkit/            metrics, diagnostics, statistics, controls, per-run evaluation, aggregation
-scripts/            data, runs, tuning, controls, videos, smoke test      tests/   70 tests (7 need torch + nerfstudio)
+scripts/            data, runs, tuning, controls, videos, smoke test      tests/   74 tests (7 need torch + nerfstudio)
 manifests/          hashed splits      configs/frozen.json   hyper-parameters      results/  committed tables, figures, logs
 docs/INTEGRATION_CHECKLIST.md   every nerfstudio API assumption and how it is checked
 ```

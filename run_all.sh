@@ -16,7 +16,7 @@ if [ "${1:-}" != "--tables-only" ]; then
   [ -f data/blender400/lego/transforms_train.json ] || bash scripts/get_data.sh
   python scripts/make_manifests.py --check
   if [ -f data/blender400/real/transforms_train.json ] || ! grep -q '"real"' manifests/index.json; then :; fi
-  python scripts/run_all.py --plan "$PLAN" --iters "$ITERS" --device "$DEVICE" ${ONLY:+--only "$ONLY"}
+  python scripts/run_all.py --plan "$PLAN" --iters "$ITERS" --device "$DEVICE" --rays "${RAYS:-4096}" ${AMP:+--amp} ${ONLY:+--only "$ONLY"}
 fi
 python -m evalkit.aggregate --results results --manifests manifests
 python scripts/run_controls.py --results results --manifests manifests || true

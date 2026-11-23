@@ -1,0 +1,18 @@
+\section{Method}
+\textbf{Base model (reused).} nerfstudio \texttt{vanilla-nerf} \cite{tancik2023nerfstudio}: 8-layer, 256-wide MLP, 10 position and 4 direction frequency bands, 64 coarse + 128 fine samples, white background, Blender data parser, Adam with learning rate $5\cdot10^{-4}$ decayed exponentially to $5\cdot10^{-5}$, 4096 rays per batch. We reuse its ray sampler, renderer, field and data loaders unchanged.
+
+\textbf{Frequency regularisation (implemented).} nerfstudio's encoding uses $L$ log-spaced frequencies $f_k$ ($L=10$, $f_k\in[2^0,2^8]$ for positions; $L=4$ for directions) and outputs $[\sin(2\pi f_k x)]_{k,d}\,\|\,[\cos(2\pi f_k x)]_{k,d}\,\|\,x$. Our \texttt{MaskedNeRFEncoding} multiplies band $k$ of both blocks by FreeNeRF's visibility weight (paper Eq.~6),
+\begin{equation}
+\alpha_k(t)=\mathrm{clip}\!\left(\tfrac{L\,t}{T}+1-k,\,0,\,1\right),\qquad T=0.7\,I,
+\end{equation}
+so at step $t$ only the lowest $\approx Lt/T$ bands are visible and all bands are open after 70\% of the $I$ training iterations. The raw input is always visible. The mask is applied to positions and directions, is updated by a training callback before every iteration, and a runtime check (\texttt{check\_layout}) asserts the sin/cos/raw layout so that the mask cannot silently gate the wrong columns.
+
+\textbf{Occlusion regularisation (implemented).} With densities $\sigma_1,\dots,\sigma_K$ of the fine pass sorted near to far,
+\begin{equation}
+\Lc_\text{occ}=\frac{1}{K}\sum_{i=1}^{M}\sigma_i ,\qquad M=20,\ \lambda_\text{occ}=0.01,
+\end{equation}
+averaged over the batch, penalises density in the first $M$ samples in front of the camera, where floaters form. The total loss is $\Lc=\Lc_\text{rgb}^\text{coarse}+\Lc_\text{rgb}^\text{fine}+\lambda_\text{occ}\Lc_\text{occ}$.
+
+\textbf{Comparator (implemented).} RegNeRF's depth-smoothness term \cite{niemeyer2022regnerf}: 32 patches of $8\times8$ rays from poses sampled on the training-camera sphere, squared differences of neighbouring expected depths weighted by detached opacity, $\lambda=0.1$.
+
+\textbf{Evaluation (implemented).} Training and evaluation are separated. The trainer exports float32 RGB, expected depth and opacity for all 25 test views and the 8 training views; \texttt{evalkit} reads those files and the ground truth and computes PSNR, SSIM, LPIPS, the gap-recovery ratio $\rho$ with a two-level (view, seed) paired bootstrap ($10^4$ resamples), the view-equivalent count $N_\text{eq}$ (the number of views vanilla NeRF needs to match the regulariser, by log-linear interpolation), and four failure diagnostics: generalisation gap $G$ (train minus test PSNR), near-camera density fraction $\Omega_M$, background opacity $B$ and high-frequency power ratio $R_\text{hi}$.

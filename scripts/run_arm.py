@@ -61,7 +61,7 @@ def lite_kwargs(device_type=None):
 
 def execute(scene, arm, n, seed, iters, *, frozen=None, run_id=None, results_dir="results/runs", out_dir="outputs",
             data_root="data/blender400", manifests="manifests", sparse_root="data/sparse", orbit=0, permute=False,
-            force=False, dry_run=False, lpips=True, device="cpu", rays=4096, device_type=None, size=400, eval_chunk=None):
+            force=False, dry_run=False, lpips=True, device="cpu", rays=4096, device_type=None, size=400, eval_chunk=None, amp=False):
     kind = "real" if scene.startswith("real") else "synthetic"
     n_int = resolve_n(manifests, scene, n)
     run_id = run_id or f"{scene}_{arm}_n{n}_s{seed}" + ("_perm" if permute else "")
@@ -76,12 +76,12 @@ def execute(scene, arm, n, seed, iters, *, frozen=None, run_id=None, results_dir
         logs.mkdir(parents=True, exist_ok=True)
         log = logs / f"{run_id}.log"
         log.write_text(json.dumps({"run_id": run_id, "scene": scene, "arm": arm, "n": n_int, "seed": seed, "iters": iters,
-                                   "frozen": frozen, **provenance()}) + "\n")
-    print(f"=== {run_id}  SEED={seed}  ITERS={iters}", flush=True)
+                                   "frozen": frozen, "rays": rays, "amp": amp, **provenance()}) + "\n")
+    print(f"=== {run_id}  SEED={seed}  ITERS={iters}  RAYS={rays}  AMP={amp}", flush=True)
     data_dir = datasets.make_sparse(data_root, manifests, scene, n, sparse_root, 0 if permute else None) if not dry_run \
         else Path(sparse_root) / f"{scene}_n{n_int}"
     cmd = arms.train_command(spec, data_dir=str(data_dir), out_dir=out_dir, run_id=run_id, iters=iters, seed=seed, scene_kind=kind,
-                             rays=rays, device_type=device_type, eval_chunk=eval_chunk)
+                             rays=rays, device_type=device_type, eval_chunk=eval_chunk, amp=amp)
     t0 = time.time()
     sh(cmd, dry_run, log)
     train_s = time.time() - t0
@@ -128,9 +128,12 @@ def main(argv=None):
     ap.add_argument("--lite", action="store_true",
                     help="laptop profile (8 GB Mac): 200x200 data in data/blender200, 512 rays/batch, MPS, small render chunks")
     ap.add_argument("--device-type", default=None, help="override: cuda | mps | cpu")
+    ap.add_argument("--rays", type=int, default=4096, help="rays per training batch")
+    ap.add_argument("--amp", action="store_true", help="mixed-precision training (fp16 autocast)")
     a = ap.parse_args(argv)
     frozen = json.loads(Path(a.frozen).read_text()) if Path(a.frozen).exists() else None
-    kw = lite_kwargs(a.device_type) if a.lite else {"device_type": a.device_type}
+    kw = lite_kwargs(a.device_type) if a.lite else {"device_type": a.device_type, "rays": a.rays}
+    kw["amp"] = a.amp
     execute(a.scene, a.arm, a.n, a.seed, a.iters, frozen=frozen, orbit=a.orbit, permute=a.permute_poses, force=a.force,
             dry_run=a.dry_run, lpips=not a.no_lpips, device=a.device, **kw)
 

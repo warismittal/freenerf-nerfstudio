@@ -41,7 +41,7 @@ case "$stage" in
          echo "running on $NG GPU(s) in parallel"
          for k in $(seq 0 $((NG-1))); do
            CUDA_VISIBLE_DEVICES=$k python scripts/run_all.py --plan submission --iters "${2:-30000}" --only "${3:?experiment ids}" \
-             ${4:+--scene "$4"} --device cuda --shard "$k/$NG" > "$OUT/runs_gpu$k.log" 2>&1 &
+             ${4:+--scene "$4"} --device cuda --rays "${RAYS:-4096}" ${AMP:+--amp} --shard "$k/$NG" > "$OUT/runs_gpu$k.log" 2>&1 &
          done
          wait
          tail -n 15 "$OUT"/runs_gpu*.log

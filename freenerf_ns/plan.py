@@ -67,14 +67,17 @@ def select(runs: List[Run], only: Optional[str] = None, scene: Optional[str] = N
 
 def submission_runs() -> List[Run]:
     """Reduced matrix actually run for the final submission (free Kaggle GPU quota, deadline 29 Nov 2026).
-    Every cut relative to core_runs() is listed in the report's 'Changes from the proposal' section."""
+    Every cut relative to core_runs() is listed in the report's 'Changes from the proposal' section.
+    Ordered by priority: if the GPU budget runs out (run_all.py --deadline-hours), what is missing is the least important."""
+    S = SYNTHETIC_REPORTED
     runs: List[Run] = []
-    runs += [Run("S-gate2", "drums", a, 8, 0) for a in ("A", "D")]                               # Gate 2 check, dev scene
-    runs += [Run("S-main", s, a, 8, sd) for s in SYNTHETIC_REPORTED for a in ("A", "D") for sd in range(3)]
-    runs += [Run("S-main", s, "A", "dense", 0) for s in SYNTHETIC_REPORTED]                      # rho denominator, C4
-    runs += [Run("S-ablation", s, a, 8, 0) for s in SYNTHETIC_REPORTED for a in ("B", "C")]      # 2x2 factorial, 1 seed
-    runs += [Run("S-ext", s, "Aprime", 8, 0) for s in SYNTHETIC_REPORTED]                        # untuned baseline (N6)
-    runs += [Run("S-ext", "lego", a, n, 0) for a in ("A", "D") for n in (4, 16)]                 # view sweep for N_eq
+    runs += [Run("S-main", s, a, 8, 0) for s in S for a in ("A", "D")]                           # P1 main table, seed 0
+    runs += [Run("S-main", s, "A", "dense", 0) for s in S]                                       # P1 rho denominator, C4
+    runs += [Run("S-ablation", s, a, 8, 0) for s in S for a in ("B", "C")]                       # P2 2x2 factorial, 1 seed
+    runs += [Run("S-main", s, a, 8, sd) for sd in (1, 2) for s in S for a in ("A", "D")]         # P3 seeds 1-2
+    runs += [Run("S-ext", "lego", a, n, 0) for n in (4, 16) for a in ("A", "D")]                 # P4 view sweep for N_eq
+    runs += [Run("S-gate2", "drums", a, 8, 0) for a in ("A", "D")]                               # P5 dev-scene check
+    runs += [Run("S-ext", s, "Aprime", 8, 0) for s in S]                                         # P5 untuned baseline
+    runs += [Run("S-opt", "lego", "E", 8, 0)]                                                     # P5 comparator
     runs += [Run("S-real", REAL, a, 8, 0) for a in ("A", "D")] + [Run("S-real", REAL, "A", "dense", 0)]
-    runs += [Run("S-opt", "lego", "E", 8, 0)]                                                     # comparator if time allows
     return runs
