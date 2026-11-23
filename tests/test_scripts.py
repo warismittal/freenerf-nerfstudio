@@ -141,3 +141,14 @@ def test_shards_partition_the_plan():
     b = run(["scripts/run_all.py", "--plan", "submission", "--list", "--shard", "1/2"]).stdout
     ids = lambda out: {l.split()[1] for l in out.splitlines() if l.startswith("S-")}
     assert ids(a) and ids(b) and not ids(a) & ids(b) and len(ids(a) | ids(b)) == 30
+
+
+def test_choose_iters_budget_rule():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("choose_iters", ROOT / "scripts" / "choose_iters.py")
+    m = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(m)
+    # 40 GPU-h over 27 runs, 8 min eval each, 0.35 s/iter -> (5333 - 480) s / 0.35 = 13866 -> 13000
+    assert m.decide(0.35, 40, 27, 8, 3000, 30000) == 13000
+    assert m.decide(0.01, 40, 27, 8, 3000, 30000) == 30000      # clamp high
+    assert m.decide(5.0, 40, 27, 8, 3000, 30000) == 3000        # clamp low

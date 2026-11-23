@@ -44,6 +44,8 @@ def main(argv=None):
 
     base = plan.submission_runs() if a.plan == "submission" else plan.core_runs(a.extensions)
     runs = plan.select(base, a.only, a.scene)
+    if not a.list and not a.dry_run:     # drop finished runs before sharding so both GPUs get equal new work
+        runs = [r for r in runs if not (Path("results/runs") / f"{r.run_id}.json").exists()]
     if a.shard:
         k, n = (int(x) for x in a.shard.split("/"))
         runs = runs[k::n]
