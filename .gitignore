@@ -1,0 +1,22 @@
+# python
+__pycache__/
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+.ruff_cache/
+# project data and outputs (never committed)
+data/
+captures/
+outputs/
+results/runs/*.npy
+# results/ (tables, figures, logs, per-run json) IS committed; renders are not
+*.ckpt
+*.pt
+# macOS
+.DS_Store
+wandb/
+tensorboard/
+outputs_smoke_*.log
+outputs_lite/
+results_lite/
+# videos are small and committed; anything >50 MB must not be

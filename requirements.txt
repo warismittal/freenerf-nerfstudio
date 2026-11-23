@@ -1,0 +1,13 @@
+# Pin the exact versions after your first successful install:  pip freeze > requirements.<mac|cuda>.lock
+nerfstudio
+lpips
+scikit-image
+scipy
+numpy
+pandas
+matplotlib
+pillow
+pyyaml
+optuna
+pytest
+ruff

@@ -1,0 +1,6 @@
+{
+  "A": {"lr": 0.0005},
+  "D": {"freq_end_frac": 0.7, "occ_weight": 0.01, "occ_num_samples": 20},
+  "E": {"ds_weight": 0.1, "ds_patch_size": 8},
+  "_meta": {"frozen": false, "note": "paper/default values; scripts/tune.py overwrites them, scripts/freeze_config.py stamps the result"}
+}

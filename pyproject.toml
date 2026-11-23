@@ -1,0 +1,45 @@
+[project]
+name = "freenerf-nerfstudio"
+version = "0.1.0"
+description = "FreeNeRF (frequency annealing + occlusion regularisation) as a nerfstudio method, with a gap-recovery evaluation harness"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+dependencies = [
+  "nerfstudio",
+  "lpips",
+  "scikit-image",
+  "scipy",
+  "numpy",
+  "pandas",
+  "matplotlib",
+  "pillow",
+  "pyyaml",
+]
+
+[project.optional-dependencies]
+tune = ["optuna"]
+app = ["streamlit"]
+dev = ["pytest", "ruff"]
+
+# nerfstudio discovers methods through these entry points.
+# After `pip install -e .`, `ns-train freenerf --help` must list the method.
+[project.entry-points."nerfstudio.method_configs"]
+freenerf = "freenerf_ns.config:freenerf_method"
+sparse-vanilla-default = "freenerf_ns.config:sparse_vanilla_default"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["freenerf_ns*", "evalkit*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+
+[tool.ruff.lint]
+select = ["E9", "F63", "F7", "F82"]   # syntax errors and undefined names only
