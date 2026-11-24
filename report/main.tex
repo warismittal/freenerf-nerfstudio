@@ -14,6 +14,20 @@
 \setlength{\parskip}{0pt}
 \graphicspath{{../results/figures/}{figures/}}
 \IfFileExists{generated/numbers.tex}{\input{generated/numbers.tex}}{}
+
+% Fallbacks so the report compiles before every run exists; generated/numbers.tex overrides them.
+\newcommand{\pend}{\textcolor{red}{[pending]}}
+\providecommand{\Iters}{\pend}\providecommand{\SPerIter}{\pend}\providecommand{\AmpText}{\pend}
+\providecommand{\LegoAPsnr}{\pend}\providecommand{\LegoDPsnr}{\pend}\providecommand{\LegoALpips}{\pend}\providecommand{\LegoDLpips}{\pend}
+\providecommand{\LegoRho}{\pend}\providecommand{\LegoGap}{\pend}\providecommand{\LegoDpsnr}{\pend}
+\providecommand{\ChairRho}{\pend}\providecommand{\ChairDpsnr}{\pend}
+\providecommand{\HOneStatus}{\pend}\providecommand{\HTwoStatus}{\pend}\providecommand{\ReproVerdict}{\pend}
+\providecommand{\RealRegistered}{\pend}\providecommand{\RealReproj}{\pend}\providecommand{\RealPool}{\pend}
+\providecommand{\MainSeeds}{\pend}\providecommand{\NumCells}{\pend}
+\providecommand{\RealSentence}{\pend}\providecommand{\AblationSentence}{\pend}
+% Facts only the team can confirm:
+\providecommand{\GateTwoText}{Gate 2 (Week-6 checkpoint): \textcolor{red}{[to confirm: date the repository link and results table were submitted]}.}
+\providecommand{\TanishqContribution}{\textcolor{red}{[to confirm]}}
 \newcommand{\Lc}{\mathcal{L}}
 \newcommand{\etal}{et~al.}
 

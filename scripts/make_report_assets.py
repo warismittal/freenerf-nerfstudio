@@ -141,6 +141,40 @@ def build(results: Path, out: Path) -> dict:
         macros.append(f"\\newcommand{{\\Iters}}{{{int(d['iters']):,}}}".replace(",", "{,}"))
         macros.append(f"\\newcommand{{\\SPerIter}}{{{d['s_per_iter']:.3f}}}")
         macros.append(f"\\newcommand{{\\AmpText}}{{{'mixed precision (fp16 autocast)' if d.get('amp') else 'fp32'}}}")
+    for h in nums["hypotheses"]:
+        macros.append(f"\\newcommand{{\\{macro_name(h['id'], 'status')}}}{{{h['status']}}}")
+    v = nums["verdict"].get("verdict", "pending") if isinstance(nums["verdict"], dict) else "pending"
+    macros.append(f"\\newcommand{{\\ReproVerdict}}{{{v}}}")
+    # ---------------------------------------------------------------- prose that depends on which runs exist
+    rep = results / "real_colmap_report.json"
+    if rep.exists():
+        r = json.loads(rep.read_text())
+        macros.append(f"\\newcommand{{\\RealRegistered}}{{{r['registered']} of {r['images']} ({100 * r['fraction']:.1f}\\%)}}")
+        macros.append(f"\\newcommand{{\\RealReproj}}{{{r['mean_reprojection_error_px']:.2f}}}")
+    ld = cell("lego", "A", 8)
+    macros.append(f"\\newcommand{{\\MainSeeds}}{{{int(ld.seeds) if ld is not None else 0}}}")
+    ra, rd = cell("real", "A", 8), cell("real", "D", 8)
+    rdense = summary[(summary.scene == "real") & (summary.arm == "A") & (summary.n > 8)]
+    if len(rdense):
+        macros.append(f"\\newcommand{{\\RealPool}}{{{int(rdense.iloc[0].n)}}}")
+    if ra is not None and rd is not None:
+        ref = f"; the all-views reference reaches {f(rdense.iloc[0].psnr)}\\,dB" if len(rdense) else ""
+        sent = (f"On the self-captured scene, FreeNeRF gives {f(rd.psnr)}\\,dB against {f(ra.psnr)}\\,dB for vanilla "
+                f"($\\Delta={rd.psnr - ra.psnr:+.2f}$\\,dB, LPIPS {f(ra.get('lpips_alex'), 3)}$\\to${f(rd.get('lpips_alex'), 3)}){ref}.")
+    else:
+        sent = "The self-captured scene's runs did not finish within the GPU budget (Section~\\ref{sec:changes})."
+    macros.append(f"\\newcommand{{\\RealSentence}}{{{sent}}}")
+    parts = []
+    for sc in ("lego", "chair"):
+        gs = {a: g(sc, a) for a in ("B", "C", "D", "E")}
+        if gs["B"] is not None and gs["C"] is not None and gs["D"] is not None:
+            b, c, d = gs["B"].dpsnr_vs_A, gs["C"].dpsnr_vs_A, gs["D"].dpsnr_vs_A
+            lead = "the frequency mask" if b > c else "the occlusion loss"
+            parts.append(f"On {SCENE_NAME[sc]}, the mask alone changes PSNR by {b:+.2f}\\,dB, the occlusion loss alone by {c:+.2f}\\,dB "
+                         f"and both together by {d:+.2f}\\,dB, so {lead} carries most of the effect"
+                         + (f"; RegNeRF's depth smoothness gives {gs['E'].dpsnr_vs_A:+.2f}\\,dB" if gs["E"] is not None else "") + ".")
+    macros.append("\\newcommand{\\AblationSentence}{" + (" ".join(parts) if parts else
+                  "The ablation runs did not finish within the GPU budget (Section~\\ref{sec:changes}).") + "}")
     n_runs = len(summary.index)
     macros.append(f"\\newcommand{{\\NumCells}}{{{n_runs}}}")
     (out / "numbers.tex").write_text("\n".join(macros) + "\n")
