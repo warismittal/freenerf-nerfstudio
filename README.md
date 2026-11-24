@@ -57,7 +57,7 @@ figures `results/figures/R1..R7`, hypotheses H1-H6 and the reproduction verdict 
 
 ### Cross-check: independent PyTorch implementation
 
-`results/crosscheck_pytorch/lego_s42/` holds Lego renders from Tanishq's separate plain-PyTorch NeRF (frequency mask only, own 8-view subset, seed 42): three orbit videos, `side_by_side.mp4` (8-view vanilla | 8-view annealed | 100-view) and `comparison.png`. It uses a different split and budget, so its scores are not mixed into the tables above; it checks that the qualitative effect (fewer floaters) appears in a second code base.
+`results/crosscheck_pytorch/lego_s42/` holds Lego renders from Tanishq's separate plain-PyTorch NeRF (frequency mask only, own 8-view subset, 75k steps, seed 42): three orbit videos, `side_by_side.mp4` (8-view vanilla | 8-view annealed | 100-view) and `comparison.png`. It uses a different split and budget, so its scores are not mixed into the tables above; it checks that the qualitative effect (fewer floaters) appears in a second code base.
 
 ## What was implemented and what was reused
 | Implemented here | Reused |
