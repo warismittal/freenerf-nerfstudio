@@ -92,7 +92,8 @@ def execute(scene, arm, n, seed, iters, *, frozen=None, run_id=None, results_dir
     data_dir = datasets.make_sparse(data_root, manifests, scene, n, sparse_root, 0 if permute else None) if not dry_run \
         else Path(sparse_root) / f"{scene}_n{n_int}"
     cmd = arms.train_command(spec, data_dir=str(data_dir), out_dir=out_dir, run_id=run_id, iters=iters, seed=seed, scene_kind=kind,
-                             rays=rays, device_type=device_type, eval_chunk=eval_chunk, amp=amp)
+                             rays=rays, device_type=device_type, eval_chunk=eval_chunk, amp=amp,
+                             random_bg=scene in arms.RANDOM_BG_SCENES)
     config = Path(out_dir) / run_id / spec.method / "main" / "config.yml"
     done = finished_checkpoint(config, iters) if not (dry_run or force) else None
     if done is not None:                                  # resume: training finished earlier, only export/eval failed

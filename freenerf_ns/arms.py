@@ -76,9 +76,17 @@ def flag(name: str) -> str:
     return "--" + name.replace("_", "-")
 
 
+# Scenes trained with a random background colour (gt alpha kept, blended with the same random colour in the loss).
+# Chair collapsed to an empty, all-white field under the default white background in every run, including the
+# 100-view reference (training loss flat at the "predict white" value from step ~1.4k): the object covers ~16% of
+# each image, so explaining the image as background is a strong local minimum. Random backgrounds remove that
+# minimum. Both arms of a scene always share the setting, so within-scene comparisons stay paired.
+RANDOM_BG_SCENES = ("chair",)
+
+
 def train_command(spec: ArmSpec, *, data_dir: str, out_dir: str, run_id: str, iters: int, seed: int,
                   scene_kind: str = "synthetic", rays: int = 4096, device_type: Optional[str] = None,
-                  eval_chunk: Optional[int] = None, amp: bool = False) -> List[str]:
+                  eval_chunk: Optional[int] = None, amp: bool = False, random_bg: bool = False) -> List[str]:
     cmd = ["ns-train", spec.method, "--data", data_dir, "--output-dir", out_dir, "--experiment-name", run_id,
            "--timestamp", "main", "--max-num-iterations", str(iters), "--machine.seed", str(seed), "--vis", "tensorboard"]
     if spec.method == "freenerf":
@@ -89,6 +97,8 @@ def train_command(spec: ArmSpec, *, data_dir: str, out_dir: str, run_id: str, it
         cmd += ["--pipeline.model." + k.replace("_", "-"), _fmt(v)]
     if scene_kind == "real":
         cmd += ["--pipeline.model.background-color", "last_sample"]
+    elif random_bg:
+        cmd += ["--pipeline.model.background-color", "random"]
     if rays != 4096:                      # lite mode: smaller ray batches fit in 8 GB of memory
         cmd += ["--pipeline.datamanager.train-num-rays-per-batch", str(rays)]
     if device_type:                       # 'mps' on Apple Silicon, 'cpu' on Intel Macs
@@ -98,4 +108,6 @@ def train_command(spec: ArmSpec, *, data_dir: str, out_dir: str, run_id: str, it
     if eval_chunk:                        # rays rendered at once when exporting images (memory!)
         cmd += ["--pipeline.model.eval-num-rays-per-chunk", str(eval_chunk)]
     cmd.append("blender-data")
+    if random_bg and scene_kind != "real":
+        cmd += ["--alpha-color", "None"]     # keep RGBA so the loss can blend gt with the same random colour
     return cmd

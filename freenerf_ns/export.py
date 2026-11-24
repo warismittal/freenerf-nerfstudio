@@ -132,6 +132,9 @@ def main(argv=None):
     config, pipeline, ckpt, step = eval_setup(Path(a.config), test_mode="inference")
     model, device = pipeline.model.eval(), pipeline.device
     model.config.eval_num_rays_per_chunk = a.chunk
+    for r in (getattr(model, "renderer_rgb", None),):      # random-background training renders on white for eval
+        if r is not None and getattr(r, "background_color", None) == "random":
+            r.background_color = "white"
     import torch
     torch.cuda.empty_cache() if torch.cuda.is_available() else None
     man = json.loads(Path(a.manifest).read_text())
