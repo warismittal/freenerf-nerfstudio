@@ -53,12 +53,18 @@ def run_pycolmap(img_dir: Path, work: Path):
     db = work / "database.db"
     sparse = work / "sparse"
     sparse.mkdir(parents=True, exist_ok=True)
-    pycolmap.extract_features(db, img_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model="SIMPLE_RADIAL")
+    try:                                                  # pycolmap >= 3.11: camera model lives in ImageReaderOptions
+        ro = pycolmap.ImageReaderOptions()
+        ro.camera_model = "SIMPLE_RADIAL"
+        pycolmap.extract_features(db, img_dir, camera_mode=pycolmap.CameraMode.SINGLE, reader_options=ro)
+    except (TypeError, AttributeError):
+        pycolmap.extract_features(db, img_dir, camera_mode=pycolmap.CameraMode.SINGLE, camera_model="SIMPLE_RADIAL")
     pycolmap.match_exhaustive(db)
     recs = pycolmap.incremental_mapping(db, img_dir, sparse)
     if not recs:
         raise RuntimeError("COLMAP registered no images")
-    rec = max(recs.values(), key=lambda r: r.num_reg_images())
+    nreg = lambda r: r.num_reg_images() if callable(getattr(r, "num_reg_images", None)) else len(r.images)  # noqa: E731
+    rec = max(recs.values(), key=nreg)
     cam = next(iter(rec.cameras.values()))
     f, cx, cy, k1 = (list(cam.params) + [0.0])[:4]
     poses = {}
