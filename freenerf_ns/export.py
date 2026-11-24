@@ -121,6 +121,8 @@ def main(argv=None):
     ap.add_argument("--n-ray-stats", type=int, default=4096)
     ap.add_argument("--seed", type=int, default=0)
     ap.add_argument("--limit", type=int, default=0, help="render only the first N test views (smoke tests)")
+    ap.add_argument("--chunk", type=int, default=4096,
+                    help="rays rendered per forward pass; 1<<15 needs ~8 GB for vanilla-nerf and OOMs a 15 GB T4")
     a = ap.parse_args(argv)
 
     from nerfstudio.utils.eval_utils import eval_setup
@@ -129,6 +131,9 @@ def main(argv=None):
     t0 = time.time()
     config, pipeline, ckpt, step = eval_setup(Path(a.config), test_mode="inference")
     model, device = pipeline.model.eval(), pipeline.device
+    model.config.eval_num_rays_per_chunk = a.chunk
+    import torch
+    torch.cuda.empty_cache() if torch.cuda.is_available() else None
     man = json.loads(Path(a.manifest).read_text())
     if a.limit:
         man = {**man, "test": man["test"][:a.limit]}

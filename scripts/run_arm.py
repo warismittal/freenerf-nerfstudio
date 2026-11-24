@@ -59,6 +59,16 @@ def lite_kwargs(device_type=None):
                 sparse_root="data/sparse200", out_dir="outputs_lite", results_dir="results_lite/runs")
 
 
+def finished_checkpoint(config: Path, iters: int):
+    """The final checkpoint of an earlier, completed training run of this config, or None."""
+    if not config.exists():
+        return None
+    ckpts = sorted((config.parent / "nerfstudio_models").glob("step-*.ckpt"))
+    if ckpts and int(ckpts[-1].stem.split("-")[1]) >= iters - 1:
+        return ckpts[-1]
+    return None
+
+
 def execute(scene, arm, n, seed, iters, *, frozen=None, run_id=None, results_dir="results/runs", out_dir="outputs",
             data_root="data/blender400", manifests="manifests", sparse_root="data/sparse", orbit=0, permute=False,
             force=False, dry_run=False, lpips=True, device="cpu", rays=4096, device_type=None, size=400, eval_chunk=None, amp=False):
@@ -75,17 +85,23 @@ def execute(scene, arm, n, seed, iters, *, frozen=None, run_id=None, results_dir
         logs = Path(results_dir).parent / "logs"
         logs.mkdir(parents=True, exist_ok=True)
         log = logs / f"{run_id}.log"
-        log.write_text(json.dumps({"run_id": run_id, "scene": scene, "arm": arm, "n": n_int, "seed": seed, "iters": iters,
+        prev = log.read_text() if log.exists() else ""
+        log.write_text(prev + json.dumps({"run_id": run_id, "scene": scene, "arm": arm, "n": n_int, "seed": seed, "iters": iters,
                                    "frozen": frozen, "rays": rays, "amp": amp, **provenance()}) + "\n")
     print(f"=== {run_id}  SEED={seed}  ITERS={iters}  RAYS={rays}  AMP={amp}", flush=True)
     data_dir = datasets.make_sparse(data_root, manifests, scene, n, sparse_root, 0 if permute else None) if not dry_run \
         else Path(sparse_root) / f"{scene}_n{n_int}"
     cmd = arms.train_command(spec, data_dir=str(data_dir), out_dir=out_dir, run_id=run_id, iters=iters, seed=seed, scene_kind=kind,
                              rays=rays, device_type=device_type, eval_chunk=eval_chunk, amp=amp)
-    t0 = time.time()
-    sh(cmd, dry_run, log)
-    train_s = time.time() - t0
     config = Path(out_dir) / run_id / spec.method / "main" / "config.yml"
+    done = finished_checkpoint(config, iters) if not (dry_run or force) else None
+    if done is not None:                                  # resume: training finished earlier, only export/eval failed
+        train_s = max(done.stat().st_mtime - config.stat().st_mtime, 0.0)
+        print(f"[resume] {run_id}: reusing {done.name}, skipping training", flush=True)
+    else:
+        t0 = time.time()
+        sh(cmd, dry_run, log)
+        train_s = time.time() - t0
     manifest = Path(manifests) / f"{scene}_n{n_int}.json"
     export = ["python", "-m", "freenerf_ns.export", "--config", config, "--scene", scene, "--manifest", manifest,
               "--data-root", data_root, "--out", Path(out_dir) / run_id / "export", "--seed", seed,
