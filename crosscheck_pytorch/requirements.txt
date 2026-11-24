@@ -1,0 +1,7 @@
+# Install the matching torch/torchvision pair for your GPU first (see README).
+torch>=2.4
+torchvision>=0.19
+numpy>=1.24
+Pillow>=10
+lpips==0.1.4
+imageio-ffmpeg>=0.5,<0.7

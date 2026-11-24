@@ -60,8 +60,12 @@ def build(nums: dict, iters: dict, extra: dict) -> Presentation:
     prs = Presentation()
     prs.slide_width, prs.slide_height = Inches(13.333), Inches(7.5)
     for layout in prs.slide_layouts:          # widen placeholders to the 16:9 page
-        for ph in layout.placeholders:
+        for ph in layout.placeholders:      # set all four: setting only left/width zeroes top/height
             ph.left, ph.width = Inches(0.6), Inches(12.1)
+            if ph.placeholder_format.idx == 0:
+                ph.top, ph.height = Inches(0.35), Inches(1.1)
+            else:
+                ph.top, ph.height = Inches(1.6), Inches(5.5)
     I = iters.get("iters", "?")
     scenes = [s for s in ("lego", "chair", "real") if cell(nums, s, "A")]
 
@@ -108,11 +112,28 @@ def build(nums: dict, iters: dict, extra: dict) -> Presentation:
         if parts:
             ab.append(f"{s.capitalize()} dPSNR vs vanilla: " + ", ".join(parts))
     add_slide(prs, "Ablation: which half does the work?", ab + extra.get("ablation", []))
-    add_slide(prs, "More views or a regulariser?", extra.get("views", ["See report Table 3"]))
+    cross = Path(__file__).resolve().parents[1] / "results/crosscheck_pytorch/lego_s42/comparison.png"
+    if cross.exists():   # Tanishq's independent PyTorch implementation, matched Lego orbit
+        s = add_slide(prs, "Independent check: a second code base", [])
+        body = s.placeholders[1]
+        body._element.getparent().remove(body._element)
+        s.shapes.add_picture(str(cross), Inches(0.6), Inches(1.6), height=Inches(5.6))
+        tf = s.shapes.add_textbox(Inches(7.6), Inches(1.8), Inches(5.2), Inches(5)).text_frame
+        tf.word_wrap = True
+        for i, line in enumerate(["Plain PyTorch NeRF by Tanishq", "Frequency mask only, 75k steps, Lego",
+                                  "Rows: 100 views, 8 views, 8 views + mask",
+                                  "8-view floaters above the bucket disappear with the mask"]):
+            p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
+            p.text = line
+            p.space_after = Pt(14)
+            for r in p.runs:
+                r.font.size = Pt(BODY_PT)
+    else:
+        add_slide(prs, "More views or a regulariser?", extra.get("views", ["See report Table 3"]))
     add_slide(prs, "Failure analysis", extra.get("failure", ["See report Section 5"]))
     add_slide(prs, "Changes from the proposal", extra.get("changes", ["See report Section 6"]))
     add_slide(prs, "Conclusion and declarations", extra.get("conclusion", []) + [
-        "Design, mapping and flowcharts: Waris and Tanishq",
+        "Design, mapping and flowcharts: Waris and Tanishq; PyTorch cross-check: Tanishq",
         "AI use (declared): Claude wrote the code, ran the Kaggle jobs, drafted report and slide text",
         "All numbers come from logged runs in the public repository"])
     return prs
