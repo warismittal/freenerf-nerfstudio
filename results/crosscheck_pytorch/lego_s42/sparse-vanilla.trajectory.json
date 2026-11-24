@@ -1,0 +1,12 @@
+{
+  "run_id": "5017814ebc891e916cbec2c346260c01",
+  "model_sha256": "3be8359f1b4cba47c0b36dc2d7452b16510a5cdbfc9fe42aed339bf44cecb45c",
+  "trajectory": {
+    "data_hash": "bdc22418467720a3dbf5555318532caf17c250a05433f8553ae58372f11e89e2",
+    "downscale": 2,
+    "frames": 120,
+    "fps": 24,
+    "path": "blender-orbit-v1"
+  },
+  "trajectory_hash": "a439091ea45f0bf3164b894df78c2071ed01ec746fa1481dd61612b806d7914e"
+}
