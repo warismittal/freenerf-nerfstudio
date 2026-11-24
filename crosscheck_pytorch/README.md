@@ -1,4 +1,4 @@
-> **Cross-check implementation (Tanishq).** A separate plain-PyTorch NeRF with the FreeNeRF frequency mask, written independently of the nerfstudio method in the repository root. Commands below run from this folder. Its Lego GPU renders (75k steps, seed 42) are in `../results/crosscheck_pytorch/lego_s42/`.
+> **Cross-check implementation (Waris and Tanishq).** A separate plain-PyTorch NeRF with the FreeNeRF frequency mask, written independently of the nerfstudio method in the repository root. Commands below run from this folder. Its Lego GPU renders (75k steps, seed 42) are in `../results/crosscheck_pytorch/lego_s42/`.
 
 # Sparse-view NeRF with a frequency regularisation prior
 
