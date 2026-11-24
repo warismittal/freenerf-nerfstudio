@@ -112,7 +112,8 @@ def build(nums: dict, iters: dict, extra: dict) -> Presentation:
     add_slide(prs, "Failure analysis", extra.get("failure", ["See report Section 5"]))
     add_slide(prs, "Changes from the proposal", extra.get("changes", ["See report Section 6"]))
     add_slide(prs, "Conclusion and declarations", extra.get("conclusion", []) + [
-        "AI use: Claude (Anthropic) helped write code, run Kaggle jobs, draft report and slides",
+        "Design, mapping and flowcharts: Waris and Tanishq",
+        "AI use (declared): Claude wrote the code, ran the Kaggle jobs, drafted report and slide text",
         "All numbers come from logged runs in the public repository"])
     return prs
 
