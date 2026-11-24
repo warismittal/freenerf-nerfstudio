@@ -84,8 +84,9 @@ captured the photos, wrote and ran the separate plain-PyTorch implementation in 
 reviewed the code and results, and are responsible for every claim in the report.
 
 **AI assistance (Claude, Anthropic)** was used for the writing work: it wrote the nerfstudio code and tests in this repository
-(everything outside `crosscheck_pytorch/`) from that design, ran and monitored the Kaggle training jobs on our account, and drafted the report and slide text from the
-logged results, which we then reviewed. Every reported number is produced by the code in this repository and traces to
+(everything outside `crosscheck_pytorch/`) from that design, ran and monitored the Kaggle training jobs on our account, and
+drafted the report and slide text from the logged results, which we then reviewed. The `crosscheck_pytorch/`
+implementation is our own work, written with help from an AI coding assistant (Codex). Every reported number is produced by the code in this repository and traces to
 `results/logs/`.
 
 ## Repository map
