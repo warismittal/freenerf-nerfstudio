@@ -78,7 +78,7 @@ figures `results/figures/R1..R7`, hypotheses H1-H6 and the reproduction verdict 
 
 ## Contributions and AI declaration
 **Waris and Tanishq** designed the project: the problem framing and proposal, the detailed module-by-module mapping of
-what to build, and the explanation flowcharts of the pipeline (data split, method, evaluation, hypotheses and controls)
+what to build and the explanation flowcharts of the pipeline (data split, method, evaluation, hypotheses and controls)
 that the implementation follows. They chose the regulariser, the evaluation protocol and the self-captured scene,
 captured the photos, wrote and ran the separate plain-PyTorch implementation in `crosscheck_pytorch/`,
 reviewed the code and results, and are responsible for every claim in the report.
